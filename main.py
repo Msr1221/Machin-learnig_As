@@ -5,6 +5,13 @@ import pandas as pd
 import numpy as np
 from pydantic import BaseModel
 from sklearn.preprocessing import StandardScaler
+import sys
+
+# Debugging: Print Python and library versions
+print(f"🛠 Python Version: {sys.version}")
+print(f"🛠 Numpy Version: {np.__version__}")
+print(f"🛠 Joblib Version: {joblib.__version__}")
+print(f"🛠 Scikit-Learn Version: {getattr(joblib, '__version__', 'Unknown')}")
 
 # Initialize FastAPI app
 app = FastAPI()
@@ -18,7 +25,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Load trained model and scaler with error handling
+# Try loading model and scaler with better error handling
 try:
     model = joblib.load("logreg.joblib")  # Load trained model
     scaler = joblib.load("scaler.joblib")  # Load trained scaler
