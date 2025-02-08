@@ -2,29 +2,33 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 import joblib
 import pandas as pd
-import numpy as np  # Ensure numpy is imported
+import numpy as np
 from pydantic import BaseModel
+from sklearn.preprocessing import StandardScaler
 
 # Initialize FastAPI app
 app = FastAPI()
 
-# Enable CORS to allow frontend access
+# Enable CORS (for frontend communication)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["*"],  
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Load trained model and scaler
+# Load trained model and scaler with error handling
 try:
     model = joblib.load("logreg.joblib")  # Load trained model
     scaler = joblib.load("scaler.joblib")  # Load trained scaler
     print("✅ Model and scaler loaded successfully")
+except ModuleNotFoundError as e:
+    print(f"❌ Missing module error: {e}")
+    raise RuntimeError("❌ Model loading failed: Required module is missing. Try reinstalling numpy and scikit-learn.")
 except Exception as e:
-    print(f"❌ Error loading model or scaler: {e}")
-    raise RuntimeError(f"Error loading model or scaler: {e}")
+    print(f"❌ General error while loading model: {e}")
+    raise RuntimeError(f"❌ Model loading failed: {e}")
 
 # Define request schema
 class DiabetesInput(BaseModel):
@@ -43,21 +47,16 @@ FEATURES = ["Pregnancies", "Glucose", "BloodPressure", "SkinThickness",
 
 # Preprocess input data
 def preprocess(data: DiabetesInput):
+    df_input = pd.DataFrame([data.dict()])  # Convert input to DataFrame
+    df_input = df_input[FEATURES]  # Ensure feature order matches training
+
+    # Transform input using the pre-trained scaler
     try:
-        df_input = pd.DataFrame([data.dict()])  # Convert input to DataFrame
-        df_input = df_input[FEATURES]  # Ensure feature order matches training
-        
-        # Check if scaler is loaded correctly
-        if scaler is None:
-            raise RuntimeError("Scaler not found. Ensure 'scaler.joblib' is present.")
-
-        # Transform input using the pre-trained scaler
         df_input[FEATURES] = scaler.transform(df_input[FEATURES])
-        
-        return df_input
-
     except Exception as e:
-        raise ValueError(f"Error preprocessing input: {e}")
+        raise ValueError(f"Error scaling input: {e}")
+    
+    return df_input
 
 @app.post("/predict/")
 def predict_diabetes(data: DiabetesInput):
@@ -66,10 +65,6 @@ def predict_diabetes(data: DiabetesInput):
 
         processed_data = preprocess(data)
         print(f"🔄 Processed Data: \n{processed_data}")
-
-        # Check if model is loaded correctly
-        if model is None:
-            raise RuntimeError("Model not found. Ensure 'logreg.joblib' is present.")
 
         prediction = model.predict(processed_data)[0]
         probability = model.predict_proba(processed_data)[0][1]
@@ -85,3 +80,11 @@ def predict_diabetes(data: DiabetesInput):
 @app.get("/")
 def root():
     return {"message": "🚀 Diabetes Prediction API is running!"}
+
+@app.get("/health/")
+def health_check():
+    try:
+        _ = np.array([1, 2, 3])  # Test NumPy
+        return {"status": "healthy"}
+    except Exception as e:
+        return {"status": "unhealthy", "error": str(e)}
