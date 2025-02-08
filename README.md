@@ -29,7 +29,7 @@ The Diabetes Prediction System is a machine learning-based web application that 
 
 ### 1. Clone the Repository
 
-git clone https://github.com/Msr1221/diabetic-predction.git
+git clone https://github.com/Msr1221/Machin-learnig_As.git
 cd diabetes-prediction
 
 ### 2. Create a Virtual Environment
@@ -96,4 +96,4 @@ For questions or collaborations, feel free to reach out an issue in this reposit
 
 ---
 
-### 🔗 [GitHub Repository](https://github.com/Msr1221/diabetic-predction.git)
+### 🔗 [GitHub Repository](https://github.com/Msr1221/Machin-learnig_As.git)
